@@ -6,9 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 
-public interface ChannelDAO extends JpaRepository<Channel, Integer> {
+public interface ChannelDAO extends JpaRepository<Channel,Integer>{
     // 특정 멤버의 모든 채널 조회
-    // SELECT * FROM channel WHERE member_id=? 이게 원래 쿼리문...
-    @Query(value="SELECT * FROM channel WHERE member_id= :memberId", nativeQuery = true)
-    List<Channel> findByMemberid(String memberId);
+    // SELECT * FROM channel WHERE id=?
+    @Query(value="SELECT * FROM channel WHERE id = :id", nativeQuery = true)
+    List<Channel> findByMemberId(String id);
 }
