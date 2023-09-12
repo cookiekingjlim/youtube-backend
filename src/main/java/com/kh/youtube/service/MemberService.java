@@ -14,9 +14,6 @@ public class MemberService {
     @Autowired
     private MemberDAO dao;
 
-
-
-
     public List<Member> showAll(){
         return dao.findAll();    //전체 리스트에 관련된 메소드->findAll // SELECT * FROM MEMBER
     }
