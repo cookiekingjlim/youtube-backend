@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/*")   // api 사용시 주소는 api를 작성해줘야하므로
+@CrossOrigin(origins = {"*"}, maxAge = 6000)    // 원래는 maxAge default, origins 상세 지정함
 public class CategoryController {
 
     @Autowired

@@ -52,3 +52,4 @@ public class ChannelService {
         return channelDAO.findByMemberId(id);
     }
 }
+

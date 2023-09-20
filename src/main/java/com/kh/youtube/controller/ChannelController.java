@@ -1,22 +1,34 @@
 package com.kh.youtube.controller;
 
 import com.kh.youtube.domain.Channel;
+import com.kh.youtube.domain.Member;
 import com.kh.youtube.domain.Subscribe;
 import com.kh.youtube.domain.Video;
 import com.kh.youtube.service.ChannelService;
-import com.kh.youtube.service.MemberService;
 import com.kh.youtube.service.SubscribeService;
 import com.kh.youtube.service.VideoService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/*")
+@Slf4j
 public class ChannelController {
+
+    @Value("${spring.servlet.multipart.location}")
+    private String uploadPath;
 
     @Autowired
     private ChannelService channel;
@@ -40,7 +52,32 @@ public class ChannelController {
 
     // 채널 추가 POST - http://localhost:8000/api/channel
     @PostMapping("/channel")
-    public ResponseEntity<Channel> createChannel(@RequestBody Channel vo){
+    public ResponseEntity<Channel> createChannel(MultipartFile photo, String name, String desc ){
+        String originalPhoto = photo.getOriginalFilename();
+        String realPhoto = originalPhoto.substring(originalPhoto.lastIndexOf("\\")+1);
+
+        String uuid = UUID.randomUUID().toString();
+
+        String savePhoto = uploadPath + File.separator + uuid + "_" + realPhoto;
+        Path pathPhoto = Paths.get(savePhoto);
+
+        try {
+            photo.transferTo(pathPhoto);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        
+        // 파일 업로드가 끝났으니 경로(savePhoto), name, desc, memberId(id) 필요함
+
+        Channel vo = new Channel();
+        vo.setChannelPhoto(savePhoto);
+        vo.setChannelName(name);
+        vo.setChannelDesc(desc);
+        Member member = new Member();
+        member.setId("user1");  // 나중에 처리할 거라 임시적으로 담아
+        vo.setMember(member);
+
+//        return ResponseEntity.status(HttpStatus.OK).build();
         return ResponseEntity.status(HttpStatus.OK).body(channel.create(vo));
     }
 
