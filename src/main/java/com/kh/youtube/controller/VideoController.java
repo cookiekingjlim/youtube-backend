@@ -7,6 +7,10 @@ import com.kh.youtube.service.VideoService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +26,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/*")
 @Slf4j
+@CrossOrigin(origins = {"*"}, maxAge = 6000)
 public class VideoController {
 
     @Value("${spring.servlet.multipart.location}")// appication.properties에 있는 변수
@@ -35,13 +40,27 @@ public class VideoController {
 
     // 영상 전체 조회 GET - http://localhost:8000/api/video
     @GetMapping("/video")
-    public ResponseEntity <List<Video>> videoList(){
-        return ResponseEntity.status(HttpStatus.OK).body(videoService.showAll());
+    public ResponseEntity <List<Video>> videoList(@RequestParam(name = "page", defaultValue = "1") int page){    // 페이지 처리 안 할 시 디폴트값 1, 페이지 넘버 관련해서 받아와
+        // 정렬 추가 => 비디오 코드 기준으로 오름차순!
+        Sort sort = Sort.by("videoCode").descending();
+        // 한 페이지에 영상 10개(몇번째 페이지, 영상 개수, 정렬)
+        Pageable pageable = PageRequest.of(page-1,10, sort);    // 우리는 0부터 시작이니까
+        Page<Video> result = videoService.showAll(pageable);
+
+        log.info("Total Pages : " + result.getTotalPages());    // 총 페이지 가져와
+        log.info("Total Count : " + result.getTotalElements());     // 전체 개수에 해당
+        log.info("Page Number : " +  result.getNumber());   // 현재 페이지 번호
+        log.info("Page Size : " +  result.getSize());// 페이지당 데이터 개수
+        log.info("Next Page : " + result.hasNext());    // 다음 페이지의 존재여부 확인
+        log.info("First Page : " + result.isFirst()); // 시작 페이지 여부
+
+//         return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.status(HttpStatus.OK).body(result.getContent());  // 리스트로 받았으므로 이걸로 바꿔
     }
 
     // 영상 추가 POST - http://localhost:8000/api/video
     @PostMapping("/video")
-    public ResponseEntity<Video> createVideo(MultipartFile video, MultipartFile image, String title, String desc, String categoryCode) {
+    public ResponseEntity<Video> createVideo(MultipartFile video, MultipartFile image, String title, @RequestParam(name="desc", required = false) String desc, String categoryCode) {
 //       폼데이터로 받는 건 앞에 @Request...숨겨져 있어
 //      video_title, video_desc, video_url, video_photo, category_code
 //        log.info("video : " + video);
@@ -80,8 +99,8 @@ public class VideoController {
 
         // saveVideo, saveImg, title, desc, categoryCode
         Video vo = new Video();
-        vo.setVideoUrl(saveVideo);
-        vo.setVideoPhoto(saveImg);
+        vo.setVideoUrl(uuid + "_" + realVideo); //상대경로라 파일명만 지정
+        vo.setVideoPhoto(uuid + "_" + realImg);
         vo.setVideoTitle(title);
         vo.setVideoDesc(desc);
 
@@ -90,7 +109,7 @@ public class VideoController {
         vo.setCategory(category);
 
         Channel channel = new Channel();
-        channel.setChannelCode(1);
+        channel.setChannelCode(22);
         vo.setChannel(channel);
 
         // Member는 필수 아니야 없어도 됨
